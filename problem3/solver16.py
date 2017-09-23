@@ -75,7 +75,7 @@ class Status:
     def print_info(self):
         print("Count=", self.count, \
               " Manhattan=", self.manhattan, " priority1=", self.priority_manhattan, \
-              " Misplace=", self.misplace, " priority2=", self.priority_misplace, \
+              # " Misplace=", self.misplace, " priority2=", self.priority_misplace, \
               " linear Conflict=", self.linear_conflict, " priority3=", self.priority_linear_conflict)
 
     def print_solution(self):
@@ -132,9 +132,10 @@ def compare_board_manhattan(board1, board2):
     sum = 0
     for row in board1:
         for col in row:
-            coordinate1 = find_coordinate(col, board1)
-            coordinate2 = find_coordinate(col, board2)
-            sum += calculate_manhattan_distance(coordinate1, coordinate2)
+            if int(col) != 0:
+                coordinate1 = find_coordinate(col, board1)
+                coordinate2 = find_coordinate(col, board2)
+                sum += calculate_manhattan_distance(coordinate1, coordinate2)
     return sum
 
 
@@ -155,11 +156,12 @@ def compare_board_linear_conflict_horizontal(board1, board2):
     sum = 0
     for i in range(0, len(board1)):
         for j in range(0, len(board1[i])):
-            for k in range(j + 1, len(board1[i])):
-                if board1[i][j] in board2[i] \
-                        and board1[i][k] in board2[i] \
-                        and board2[i].index(board1[i][j]) > board2[i].index(board1[i][k]):
-                    sum += 1
+            if int(board1[i][j]) != 0:
+                for k in range(j + 1, len(board1[i])):
+                    if board1[i][j] in board2[i] \
+                            and board1[i][k] in board2[i] \
+                            and board2[i].index(board1[i][j]) > board2[i].index(board1[i][k]):
+                        sum += 1
     return sum
 
 
