@@ -79,7 +79,9 @@ class Status:
               " linear Conflict=", self.linear_conflict, " priority3=", self.priority_linear_conflict)
 
     def print_solution(self):
-        print(self.solution)
+        steps = ['U', 'D', 'L', 'R']
+        print([steps[i] for i in self.solution])
+        # print(self.solution)
 
     def print_all(self):
         print(printable_board(self.board))
