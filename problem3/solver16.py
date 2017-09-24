@@ -6,10 +6,12 @@
 import sys
 import copy
 
-board_end = [['1', '2', '3'], ['4', '5', '6'], ['7', '8', '0']]
+# board_end = [['1', '2', '3'], ['4', '5', '6'], ['7', '8', '0']]
 
 
-# board_end = [['1', '2', '3', '4'], ['5', '6', '7', '8'], ['9', '10', '11', '12'], ['13', '14', '15', '0']]
+board_end = [['1', '2', '3', '4'], ['5', '6', '7', '8'], ['9', '10', '11', '12'], ['13', '14', '15', '0']]
+
+
 # board_end = [['1', '2'], ['3', '0']]
 
 # definition of Status
@@ -56,7 +58,7 @@ class Status:
                     next_coordinate[1] -= 1
             self.exchange(current_coordinate, next_coordinate)
             number -= 1
-            current_coordinate[0] = next_coordinate[0]
+            current_coordinate = list(next_coordinate)
         self.count += 1
         self.update_linear_priority(board_end)
         # self.update_manhattan(board_end)
@@ -144,6 +146,8 @@ def find_coordinate(tile, board):
 
 
 # detect if a board is solvable before solving it
+# now it works only on N = 3
+# todo: make it valid for all odd and even N
 def solvable(board):
     flat_board = []
     for row in board:
@@ -151,7 +155,7 @@ def solvable(board):
     sum = 0
     for i in flat_board:
         for j in flat_board[0:flat_board.index(i)]:
-            if j > i and i != '0':
+            if int(j) > int(i) and i != '0' and j != '0':
                 sum += 1
     return sum % 2
 
@@ -278,6 +282,7 @@ def find_successors(status):
 def printable_board(board):
     return "\n".join([" ".join([col for col in row]) for row in board])
 
+
 # the solve function, the main part of the algorithm
 def solve(initial_status):
     # initial fringe and closed
@@ -293,39 +298,48 @@ def solve(initial_status):
         if is_goal(next.board):
             next.print_all()
             return next
+        # add next board to closed
         closed.append(next.board)
         for s in find_successors(next):
+            # to find if a successor in closed
             is_in_closed = False
             for c in closed:
                 if is_same(s.board, c):
                     is_in_closed = True
                     break
+
             is_in_fringe = False
+            # if not in closed, find if a successor in fringe
             if not is_in_closed:
                 for open in fringe:
                     if is_same(s.board, open.board):
                         is_in_fringe = True
+                        # if in fringe, update the priority to a smaller one
                         if s.priority < open.priority:
                             fringe.remove(open)
                             is_in_fringe = False
                         break
+                # in not in fringe, add to fringe
                 if not is_in_fringe:
                     fringe.append(s)
-                    # closed.append(s.board)
     return False
 
 
 # Main
+# get file path from argv
 file_path = sys.argv[1] if sys.argv.__len__() > 1 else None
+# read the file
 board = read_file(file_path)
+# get the initial status
 initial_status = Status(board, 0, [])
 
 import time
 
 start = time.time()
-if solvable(board) == solvable(board_end):
-    solve(initial_status)
-else:
-    print("No solution.")
+# to find out if the board is solvable before solving it
+# if solvable(board) == solvable(board_end):
+solve(initial_status)
+# else:
+print("No solution.")
 end = time.time()
 print(end - start)
