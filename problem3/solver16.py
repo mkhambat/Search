@@ -154,6 +154,9 @@ def solvable(board):
         for j in flat_board[0:flat_board.index(i)]:
             if int(j) > int(i) and i != '0' and j != '0':
                 sum_inversion += 1
+
+    # following idea comes from:
+    # http://www.geeksforgeeks.org/check-instance-15-puzzle-solvable/
     # if N is odd, sum_inversion should be even to be solvable
     if is_odd:
         return sum_inversion % 2 == 0
@@ -201,6 +204,8 @@ def compare_board_misplace(board1, board2):
 
 # compare two boards
 # by linear conflict, horizontally
+# the idea of linear conflict comes from
+# https://heuristicswiki.wikispaces.com/Linear+Conflict
 def compare_board_linear_conflict_horizontal(board1, board2):
     sum_conflict = 0
     # for each row
