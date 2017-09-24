@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 # solver16.py : Solve the 16 numbers problem when multiple tiles can move
 # Yingnan Ju, 2017 created
-# Revised by Rohan,
+# Revised by
 
 import sys
 import copy
+import time
 
 # board_end = [['1', '2', '3'], ['4', '5', '6'], ['7', '8', '0']]
 
@@ -102,9 +103,9 @@ class Status:
 
     # print priority info, for debug
     def print_info(self):
-        print("Count=", self.count, \
-              " Manhattan=", self.manhattan, " priority1=", self.priority_manhattan, \
-              # " Misplace=", self.misplace, " priority2=", self.priority_misplace, \
+        print("Count=", self.count,
+              " Manhattan=", self.manhattan, " priority1=", self.priority_manhattan,
+              # " Misplace=", self.misplace, " priority2=", self.priority_misplace,
               " linear Conflict=", self.linear_conflict, " priority3=", self.priority_linear_conflict)
 
     # print the final solution according to the "I DO NOT KNOW WHY INDEX STARTS AT 1" pattern
@@ -124,8 +125,8 @@ class Status:
 
 
 # read the input file for initial status
-def read_file(file_path):
-    file = open(file_path, 'r')
+def read_file(path):
+    file = open(path, 'r')
     line = "initial"
     board = []
     while line:
@@ -141,23 +142,34 @@ def find_coordinate(tile, board):
     for row in board:
         for col in row:
             if tile == col:
-                return (board.index(row), row.index(col))
+                return board.index(row), row.index(col)
     return None
 
 
 # detect if a board is solvable before solving it
-# now it works only on N = 3
-# todo: make it valid for all odd and even N
 def solvable(board):
+    is_odd = False if len(board) % 2 == 0 else True
     flat_board = []
     for row in board:
         flat_board.extend(row)
-    sum = 0
+    sum_inversion = 0
     for i in flat_board:
         for j in flat_board[0:flat_board.index(i)]:
             if int(j) > int(i) and i != '0' and j != '0':
-                sum += 1
-    return sum % 2
+                sum_inversion += 1
+    # if N is odd, sum_inversion should be even to be solvable
+    if is_odd:
+        return sum_inversion % 2 == 0
+    # if N is even
+    else:
+        # if '0' is at even row 0, 2, 4...
+        if find_coordinate('0', board)[0] % 2 == 0:
+            # sum_inversion should be odd to be solvable
+            return sum_inversion % 2 == 1
+        # if '0' is at odd row 1, 3, 5...
+        else:
+            # sum_inversion should be even to be solvable
+            return sum_inversion % 2 == 0
 
 
 # calculate manhattan distance between two points / coordinates
@@ -168,32 +180,32 @@ def calculate_manhattan_distance(coordinate1, coordinate2):
 # compare two boards
 # by manhattan distance
 def compare_board_manhattan(board1, board2):
-    sum = 0
+    sum_manhattan = 0
     for row in board1:
         for col in row:
             if int(col) != 0:
                 # find coordinates
                 coordinate1 = find_coordinate(col, board1)
                 coordinate2 = find_coordinate(col, board2)
-                sum += calculate_manhattan_distance(coordinate1, coordinate2)
-    return sum
+                sum_manhattan += calculate_manhattan_distance(coordinate1, coordinate2)
+    return sum_manhattan
 
 
 # compare two boards
 # by misplace tiles
 def compare_board_misplace(board1, board2):
-    sum = 0
+    sum_misplace = 0
     for row in board1:
         for col in row:
             if col != board2[board1.index(row)][row.index(col)]:
-                sum += 1
-    return sum
+                sum_misplace += 1
+    return sum_misplace
 
 
 # compare two boards
 # by linear conflict, horizontally
 def compare_board_linear_conflict_horizontal(board1, board2):
-    sum = 0
+    sum_conflict = 0
     # for each row
     for i in range(0, len(board1)):
         # for each tile
@@ -205,8 +217,8 @@ def compare_board_linear_conflict_horizontal(board1, board2):
                     if board1[i][j] in board2[i] \
                             and board1[i][k] in board2[i] \
                             and board2[i].index(board1[i][j]) > board2[i].index(board1[i][k]):
-                        sum += 1
-    return sum
+                        sum_conflict += 1
+    return sum_conflict
 
 
 # compare two boards
@@ -227,18 +239,18 @@ def is_goal(board):
 def is_same(board1, board2):
     if len(board1) != len(board2):
         return False
-    return False if any(board1[r][c] != board2[r][c] for r in range(len(board1)) for c in range(len(board[r]))) \
+    return False if any(board1[r][c] != board2[r][c] for r in range(len(board1)) for c in range(len(board1[r]))) \
         else True
 
 
 # find the next most promising status in the fringe
 def find_next(fringe):
-    min = 9999999
+    min_priority = 9999999
     index = 0
     for status in fringe:
         # '<=' time less than '<', maybe 40% less
-        if status.priority <= min:
-            min = status.priority
+        if status.priority <= min_priority:
+            min_priority = status.priority
             index = fringe.index(status)
     return index
 
@@ -284,23 +296,23 @@ def printable_board(board):
 
 
 # the solve function, the main part of the algorithm
-def solve(initial_status):
+def solve(status):
     # initial fringe and closed
-    fringe = [initial_status]
+    fringe = [status]
     closed = []
     while len(fringe) > 0:
         # find the next promising status in the fringe
         index = find_next(fringe)
-        next = fringe.pop(index)
-        # next.print_all()
+        next_status = fringe.pop(index)
+        # next_status.print_all()
 
-        # if next is the goal, return this status
-        if is_goal(next.board):
-            next.print_all()
-            return next
-        # add next board to closed
-        closed.append(next.board)
-        for s in find_successors(next):
+        # if next_status is the goal, return this status
+        if is_goal(next_status.board):
+            next_status.print_all()
+            return next_status
+        # add next_status board to closed
+        closed.append(next_status.board)
+        for s in find_successors(next_status):
             # to find if a successor in closed
             is_in_closed = False
             for c in closed:
@@ -311,12 +323,12 @@ def solve(initial_status):
             is_in_fringe = False
             # if not in closed, find if a successor in fringe
             if not is_in_closed:
-                for open in fringe:
-                    if is_same(s.board, open.board):
+                for open_status in fringe:
+                    if is_same(s.board, open_status.board):
                         is_in_fringe = True
                         # if in fringe, update the priority to a smaller one
-                        if s.priority < open.priority:
-                            fringe.remove(open)
+                        if s.priority < open_status.priority:
+                            fringe.remove(open_status)
                             is_in_fringe = False
                         break
                 # in not in fringe, add to fringe
@@ -329,17 +341,15 @@ def solve(initial_status):
 # get file path from argv
 file_path = sys.argv[1] if sys.argv.__len__() > 1 else None
 # read the file
-board = read_file(file_path)
+initial_board = read_file(file_path)
 # get the initial status
-initial_status = Status(board, 0, [])
-
-import time
+initial_status = Status(initial_board, 0, [])
 
 start = time.time()
 # to find out if the board is solvable before solving it
-# if solvable(board) == solvable(board_end):
-solve(initial_status)
-# else:
-print("No solution.")
+if solvable(initial_board):
+    solve(initial_status)
+else:
+    print("No solution.")
 end = time.time()
 print(end - start)
