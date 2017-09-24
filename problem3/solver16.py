@@ -41,13 +41,35 @@ class Status:
         # self.update_manhattan(board_end)
         # self.update_misplace(board_end)
 
-    def exchange(self, coordinate1, coordinate2):
-        self.board[coordinate1[0]][coordinate1[1]], self.board[coordinate2[0]][coordinate2[1]] = \
-            self.board[coordinate2[0]][coordinate2[1]], self.board[coordinate1[0]][coordinate1[1]]
+    def move(self, direction, number, empty_coordinate):
+        current_coordinate = list(empty_coordinate)
+        next_coordinate = list(empty_coordinate)
+        upper_limit = len(self.board)
+        number = number
+        while number > 0:
+            if direction == 'U':
+                if next_coordinate[0] + 1 < upper_limit:
+                    next_coordinate[0] += 1
+            if direction == 'D':
+                if next_coordinate[0] - 1 >= 0:
+                    next_coordinate[0] -= 1
+            if direction == 'L':
+                if next_coordinate[1] + 1 < upper_limit:
+                    next_coordinate[1] += 1
+            if direction == 'R':
+                if next_coordinate[1] - 1 >= 0:
+                    next_coordinate[1] -= 1
+            self.exchange(current_coordinate, next_coordinate)
+            number -= 1
+            current_coordinate[0] = next_coordinate[0]
         self.count += 1
         self.update_linear_priority(board_end)
         # self.update_manhattan(board_end)
         # self.update_misplace(board_end)
+
+    def exchange(self, coordinate1, coordinate2):
+        self.board[coordinate1[0]][coordinate1[1]], self.board[coordinate2[0]][coordinate2[1]] = \
+            self.board[coordinate2[0]][coordinate2[1]], self.board[coordinate1[0]][coordinate1[1]]
 
     def set_previous(self, direction):
         self.previous = direction
@@ -79,9 +101,7 @@ class Status:
               " linear Conflict=", self.linear_conflict, " priority3=", self.priority_linear_conflict)
 
     def print_solution(self):
-        steps = ['U', 'D', 'L', 'R']
-        print([steps[i] for i in self.solution])
-        # print(self.solution)
+        print(self.solution)
 
     def print_all(self):
         print(printable_board(self.board))
@@ -200,21 +220,22 @@ def find_successors(status):
     successors = []
     coordinate_empty = find_coordinate('0', status.board)
     upper_limit = len(status.board)
-    successor_coordinates = [(coordinate_empty[0] - 1, coordinate_empty[1]), \
-                             (coordinate_empty[0] + 1, coordinate_empty[1]), \
-                             (coordinate_empty[0], coordinate_empty[1] - 1), \
-                             (coordinate_empty[0], coordinate_empty[1] + 1)]
 
-    for coordinate in successor_coordinates:
-        direction = successor_coordinates.index(coordinate)
-        if coordinate[0] >= 0 \
-                and coordinate[1] >= 0 \
-                and coordinate[0] < upper_limit \
-                and coordinate[1] < upper_limit:
-            new_status = Status(status.board, status.count, status.solution)
-            new_status.exchange(coordinate, coordinate_empty)
-            new_status.set_previous(direction)
-            successors.append(new_status)
+    successor_moves = []
+    for i in range(0, coordinate_empty[0]):
+        successor_moves.append(('D', coordinate_empty[0] - i, coordinate_empty))
+    for i in range(coordinate_empty[0] + 1, upper_limit):
+        successor_moves.append(('U', upper_limit - i, coordinate_empty))
+    for i in range(0, coordinate_empty[1]):
+        successor_moves.append(('R', coordinate_empty[1] - i, coordinate_empty))
+    for i in range(coordinate_empty[1] + 1, upper_limit):
+        successor_moves.append(('L', upper_limit - i, coordinate_empty))
+
+    for move in successor_moves:
+        new_status = Status(status.board, status.count, status.solution)
+        new_status.move(move[0], move[1], move[2])
+        new_status.set_previous(move)
+        successors.append(new_status)
     return successors
 
 
