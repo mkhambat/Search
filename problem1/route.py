@@ -4,11 +4,37 @@
 # Rohan Kasture, 2017 created
 #
 
+#Note: The routes which have a speed limit of 0 are not considered. A speed limit of zero may imply it is under maintenance and
+#you cannot use that way
+
+#(1) Which search algorithm seems to work best for each routing options?
+#For long distances, A star works better than the rest.Uniform also works better but it explores more nodes
+#than what A star does. DFS performs worst. BFS gives sub optimal paths.
+
+#(2) Which algorithm is fastest in terms of the amount of computation time required by your
+#program, and by how much, according to your experiments?
+#If solutions are dense DFS is best amongst all.DFS requires least time for finding goal node.For shorter routes it is comparable to A star. But for long
+#routes DFS takes half or even less amount of time than A star.
+
+#(3) Which algorithm requires the least memory, and by how much, according to your experiments?
+#DFS requires least memory than others.It requires linear space i.e O(bm) where b is branching factor and m is maximum depth
+#BFS required O(b^d) as it keeps every node in fringe. Uniform and A star algorithm also requires O(b^d) space
+
+#(4) Which heuristic function(s) did you use, how good is it,and how might you make it/them better?
+# f(n) = g(n) + h(s), where g(n) is the cost to reach current node and h(s) is cost to reach goal node
+# h(s) is the distance computed between current node and goal node using haversine formula
+# In many cases we dont have GPS data for nodes, in that case value of h(s) will be the heuristic value of parent of s -
+# distance travelled from this node to parent. As we moved back i.e away from goal we subtracted the distance.
+#This heuristic will never overestimate the path to goal node. We will explore nodes which have minimum f(n) value
+#This is implemented using heapq structure in python. It is min priority queue.
+
+#Longtour function is implemented
+
+import  time
 import sys
 import math
 import copy
 import  heapq
-from time import sleep
 
 def read_city_gps():            # Reading city gps into a dictionary
     file = open('city-gps.txt', 'r')
@@ -22,7 +48,6 @@ def read_city_gps():            # Reading city gps into a dictionary
 
 def read_road_segments():            # Reading road segments
     file = open('road-segments.txt', 'r')
-    # file = open('test1.txt', 'r')
     result = {}
     sum = 0
     count = 0
@@ -104,6 +129,7 @@ def solve_dfs_bfs(start_city, end_city,routing_algorithm, cost_function,road_seg
             current_city = fringe.pop(0)
         else:  # dfs
             current_city = fringe.pop()
+
         if current_city[0] == end_city:
             parent[current_city[0]] = current_city[1]
             return backtrace(parent, start_city, end_city, road_segment, float(current_city[2]))
@@ -114,8 +140,7 @@ def solve_dfs_bfs(start_city, end_city,routing_algorithm, cost_function,road_seg
                 if s[0] in visited_cities:
                     continue
                 fringe.append(s)
-
-                if s[0] == end_city:
+                if s[0] == end_city: #Goal city check
                      parent[s[0]] = current_city[0]
                      return backtrace(parent, start_city, end_city, road_segment, float(current_city[2]))
     return False
@@ -128,8 +153,7 @@ def successors_cities_uniform(city, routing_algo, parameter,road_segments): #suc
         if parameter == "segments":
             result.append([int(city[0]) + 1,neighbour_city, city[1]])
         elif parameter == "time":
-            result.append([(float(city[0]) + float(road_segments[city[1]][neighbour_city][0]) / float(road_segments[city[1]][neighbour_city][1])),neighbour_city, city[1],
-                     ])
+            result.append([(float(city[0]) + float(road_segments[city[1]][neighbour_city][0]) / float(road_segments[city[1]][neighbour_city][1])),neighbour_city, city[1]])
         elif parameter == "distance": #distance
             result.append([int(city[0])+ int(road_segments[city[1]][neighbour_city][0]),neighbour_city, city[1]])
         else: # longtour cost function[
@@ -147,14 +171,14 @@ def solve_uniform(start_city, end_city,routing_algorithm, cost_function,road_seg
     current_city = []
     while len(fringe) > 0:
         current_city = heapq.heappop(fringe)
-        if current_city[1] == end_city:
+        if current_city[1] == end_city: #Goal city found
             parent[current_city[1]] = current_city[2]
             return backtrace(parent, start_city, end_city, road_segment, float(current_city[0]))
         if current_city[1] not  in visited_cities:
             visited_cities.append(current_city[1])
             parent[current_city[1]] = current_city[2]
             for s in successors_cities_uniform(current_city,routing_algorithm,cost_function,road_segment):
-                if s[1] in visited_cities:
+                if s[1] in visited_cities: #If already visited dont visit again
                     continue
                 heapq.heappush(fringe,s)
     return False
@@ -170,21 +194,15 @@ def successors_cities_astar(city,routing_algo, parameter,road_segments,parent,he
             result.append([int(city[0]) + 1,neighbour_city, city[1],int(city[0]) + 1])
 
         elif parameter == "time":
-            neighbour_city_gps = find_lat_lon(neighbour_city)
-            if neighbour_city_gps == [0,0]:
-                heuristic[neighbour_city] = float(heuristic[city[1]]) - (float(road_segments[city[1]][neighbour_city][0]))/ (float(road_segments[city[1]][neighbour_city][1]))
-                distance_goal = float(heuristic[neighbour_city]) + float(city[3])
-            else:
-                heuristic[neighbour_city] = distance_lat_lon(neighbour_city_gps[0],neighbour_city_gps[1],goal_lat_lon[0],goal_lat_lon[1])
-                distance_goal =  float(heuristic[neighbour_city]) + float(city[3])
-            result.append([float(distance_goal), neighbour_city, city[1],int(city[3]) + int(road_segments[city[1]][neighbour_city][0]),0])
+            distance_goal = float(city[0]) + float(road_segments[city[1]][neighbour_city][0]) / float(road_segments[city[1]][neighbour_city][1])
+            result.append([distance_goal,neighbour_city, city[1],distance_goal])
         elif parameter == "distance": #distance
             neighbour_city_gps = find_lat_lon(neighbour_city)
             if neighbour_city_gps == [0,0]:
                 heuristic[neighbour_city] = float(heuristic[city[1]]) - float(road_segments[city[1]][neighbour_city][0])
                 distance_goal = float(heuristic[neighbour_city]) + float(city[3])
             else:
-                heuristic[neighbour_city] = distance_lat_lon(neighbour_city_gps[0],neighbour_city_gps[1],goal_lat_lon[0],goal_lat_lon[1])
+                heuristic[neighbour_city] = distance_lat_lon(neighbour_city_gps[0],neighbour_city_gps[1],goal_lat_lon[0],goal_lat_lon[1])**(1./3.)
                 distance_goal =  float(heuristic[neighbour_city]) + float(city[3])
 
             result.append([float(distance_goal),neighbour_city,city[1],float(city[3])+ float(road_segments[city[1]][neighbour_city][0])])
@@ -254,9 +272,10 @@ def distance_lat_lon(latitude1, longitude1, latitude2, longitude2):     # Distan
         math.pow((math.sin(diff_lon / 2.0)), 2))
     c = 2.0 * (math.atan2(*(math.sqrt(a), math.sqrt(1 - a))))
     # d = 6371*c  #in km
-    distance = 3958.756 * c  # in miles //3958.756 miles is radius of earth
+    distance = 3958.756 * c  # to convert in miles,3958.756 miles is radius of earth
     return distance
 
+#Find lat long of city,if not found return [0,0]
 def find_lat_lon(current_city):
     if current_city in city_gps:
         return city_gps[current_city]
@@ -266,12 +285,20 @@ def find_lat_lon(current_city):
 start_city = sys.argv[1]
 end_city =  sys.argv[2]
 routing_algorithm = sys.argv[3]
-cost_function = sys.argv[4]
+
+if routing_algorithm == "uniform" or routing_algorithm == "astar" :
+    cost_function = sys.argv[4]
+else:
+    cost_function = "distance"
+
+#Read city gps data
 city_gps = read_city_gps()
 avg_speed = 0
+#Read road_segments data and find average speed on road in US
 avg_speed,road_segments_result = read_road_segments()
 goal_lat_lon =  find_lat_lon(end_city) #find goal city lat and long
 
+start_time = time.time()
 if routing_algorithm == "bfs" or routing_algorithm == "dfs":
     solution = solve_dfs_bfs(start_city,end_city,routing_algorithm,cost_function,road_segments_result)
 
@@ -280,6 +307,11 @@ if routing_algorithm == "uniform":
 
 if routing_algorithm == "astar":
     solution = solve_astar(start_city,end_city,routing_algorithm,cost_function,road_segments_result)
+
+end_time = time.time()-start_time
+
+
+print  "Time :" + str(end_time )
 
 #Print the path when you get the solution
 if solution != False:
@@ -294,8 +326,8 @@ if solution != False:
         city2 =result[j+1]
         distance = road_segments_result[i][result[j+1]][0]
         highway = road_segments_result[i][result[j+1]][2]
-        hours = round(float(road_segments_result[i][result[j+1]][0])/float(road_segments_result[i][result[j+1]][1]),2)
-        print("Go from {0} to {1} via {2} for {3} miles ({4} hours)".format(city1,city2,highway,distance,hours))
+        time = round(float(road_segments_result[i][result[j+1]][0])/float(road_segments_result[i][result[j+1]][1]),2)
+        print("Go from {0} to {1} via {2} for {3} miles ({4} hours)".format(city1,city2,highway,distance,time))
         str = str + i + " "
         j = j + 1
     print(length, hours, str)
