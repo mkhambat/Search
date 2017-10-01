@@ -250,7 +250,7 @@ def find_next(fringe):
     index = 0
     for status in fringe:
         # '<=' time less than '<', maybe 40% less
-        if status.priority <= min_priority:
+        if status.priority < min_priority:
             min_priority = status.priority
             index = fringe.index(status)
     return index

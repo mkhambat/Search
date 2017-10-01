@@ -79,23 +79,23 @@ class Status:
 
     def calculate_total_time(self):
         self.total_time = len(self.assigned_list) * Status.time_grade_group
-        self.least_possible_time = self.total_time
-        self.least_possible_time += math.ceil(len(self.unassigned_list)/3)
         for group in self.assigned_list:
             for student in group:
                 if student.preferred_group_size != 0 and student.preferred_group_size != len(group):
                     self.total_time += Status.time_size_email
-                    self.least_possible_time += Status.time_size_email \
-                        if len(group) > student.preferred_group_size else 0
+                    # self.least_possible_time += Status.time_size_email \
+                    # if len(group) > student.preferred_group_size else 0
                 for preferred_student in student.preferred_student_list:
                     if preferred_student not in list(student.name for student in group):
                         self.total_time += self.time_no_preferred_email
-                        self.least_possible_time += self.time_no_preferred_email \
-                            if preferred_student not in list(student.name for student in self.unassigned_list) else 0
+                        # self.least_possible_time += self.time_no_preferred_email \
+                        # if preferred_student not in list(student.name for student in self.unassigned_list) else 0
                 for hate_student in student.hate_student_list:
                     if hate_student in list(student.name for student in group):
                         self.total_time += self.time_hate_meeting
-                        self.least_possible_time += self.time_hate_meeting
+                        # self.least_possible_time += self.time_hate_meeting
+        self.least_possible_time = self.total_time
+        self.least_possible_time += math.ceil(len(self.unassigned_list) / 3)
 
     def calculate_total_time_old(self):
         self.total_time = len(self.assigned_list) * Status.time_grade_group
@@ -165,22 +165,33 @@ def find_successors(status):
     return successors
 
 
+def find_next(collection):
+    temp_min = 999999
+    index = 0
+    for item in collection:
+        if item.least_possible_time < temp_min:
+            temp_min = item.least_possible_time
+            index = collection.index(item)
+    return index
+
+
 def solve(status):
     # initial fringe and closed
     fringe = [status]
     possible_goal = None
     while len(fringe) > 0:
         # print([state.least_possible_time for state in fringe])
-        for s in find_successors(fringe.pop()):
-            # s.print_status()
-            if is_goal(s):
-                return s
-                if possible_goal is None or possible_goal.total_time > s.total_time:
-                    possible_goal = s
-                if len(fringe) == 0 or possible_goal.total_time <= fringe[-1].least_possible_time:
-                    return possible_goal
+        index = find_next(fringe)
+        next_status = fringe.pop(index)
+        if is_goal(next_status):
+            return next_status
+            if possible_goal is None or possible_goal.total_time > next_status.total_time:
+                possible_goal = next_status
+            if len(fringe) == 0 or possible_goal.total_time <= fringe[-1].least_possible_time:
+                return possible_goal
+        for s in find_successors(next_status):
             fringe.append(s)
-            fringe.sort(key=lambda student: student.least_possible_time, reverse=True)
+            # fringe.sort(key=lambda student: student.least_possible_time, reverse=True)
     return possible_goal
 
 
