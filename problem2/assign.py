@@ -95,7 +95,7 @@ class Status:
                         self.total_time += self.time_hate_meeting
                         # self.least_possible_time += self.time_hate_meeting
         self.least_possible_time = self.total_time
-        self.least_possible_time += math.ceil(len(self.unassigned_list) / 3)
+        self.least_possible_time += math.ceil(len(self.unassigned_list) / 3) * Status.time_grade_group
 
     def calculate_total_time_old(self):
         self.total_time = len(self.assigned_list) * Status.time_grade_group
@@ -132,7 +132,9 @@ class Status:
             return False
 
     def print_status(self):
-        print(self.assigned_list, self.total_time)
+        for group in self.assigned_list:
+            print(' '.join(student.name for student in group))
+        print(self.total_time)
 
 
 # read the input file for initial status
@@ -211,7 +213,7 @@ def full_solve(status):
     fringe = [status]
     possible_goal = None
     while len(fringe) > 0:
-        print([state.least_possible_time for state in fringe])
+        # print([state.least_possible_time for state in fringe])
         for s in find_successors(fringe.pop()):
             # s.print_status()
             if is_goal(s):
@@ -221,6 +223,9 @@ def full_solve(status):
     return possible_goal
 
 
+import time
+
+start = time.time()
 # Main
 #  get file path from argv
 file_path = sys.argv[1] if sys.argv.__len__() > 1 else None
@@ -234,5 +239,7 @@ full_student_list = read_file(file_path)
 Status.set_parameter(time_grade, time_preferred_email, time_hate_meeting)
 # get the initial status
 initial_status = Status([], full_student_list)
-solution = solve(initial_status)
+solution = solve_old(initial_status)
 solution.print_status()
+end = time.time()
+print(end - start)
