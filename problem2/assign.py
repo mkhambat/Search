@@ -23,6 +23,7 @@ class Student:
         self.preferred_student_list = list(p_list)
         self.hate_student_list = list(h_list)
 
+    # override functions for printing
     def __repr__(self):
         return self.name
 
@@ -54,12 +55,12 @@ class Status:
     # total time
     # "The total time spent by the course staff is equal to the sum of these components."
     total_time = 0
-
+    # least possible time is for Heuristic
     least_possible_time = 0
 
     # assigned group
     assigned_list = []
-    # unassigned people list
+    # unassigned student list
     unassigned_list = []
 
     def __init__(self, assigned_list, unassigned_list):
@@ -77,43 +78,64 @@ class Status:
         Status.time_no_preferred_email = n
         Status.time_hate_meeting = m
 
+    # calculate total time and least possible time
     def calculate_total_time(self):
+        # assigned_count is the count of assigned student
         assigned_count = 0
+        # assigned group x time per group
         self.total_time = len(self.assigned_list) * Status.time_grade_group
         for group in self.assigned_list:
             for student in group:
                 assigned_count += 1
+
+                # if size is not same with preferred size, + 1
                 if student.preferred_group_size != 0 and student.preferred_group_size != len(group):
                     self.total_time += Status.time_size_email
                     # self.least_possible_time += Status.time_size_email \
                     #     if len(group) > student.preferred_group_size else 0
+
+                # for each preferred student not in group, + email time
                 for preferred_student in student.preferred_student_list:
                     if preferred_student not in list(student.name for student in group):
                         self.total_time += self.time_no_preferred_email
                         # self.least_possible_time += self.time_no_preferred_email \
                         #     if preferred_student not in list(student.name for student in self.unassigned_list) else 0
+
+                # for each hate student in group, + meeting time
                 for hate_student in student.hate_student_list:
                     if hate_student in list(student.name for student in group):
                         self.total_time += self.time_hate_meeting
                         # self.least_possible_time += self.time_hate_meeting
-        self.least_possible_time = self.total_time + math.ceil(
-            (len(self.unassigned_list) + assigned_count - len(self.assigned_list) * 3) / 3) \
-                                                     * Status.time_grade_group
 
+        # heuristic, or least time = total time (spent) + unassigned student
+        # actually, this not so accurate heuristic works better
+        self.least_possible_time = self.total_time + Status.time_grade_group * math.ceil(
+            (len(self.unassigned_list) / 3))
+        # this one is more accurate but works worse
+        # If I have a more accurate one, the time will be much much longer
+        # self.least_possible_time = self.total_time + Status.time_grade_group * math.ceil(
+        #     ((len(self.unassigned_list) + assigned_count - len(self.assigned_list) * 3)) / 3)
+
+    # assign a new student from unassigned list
     def assign_student(self, group_index):
         if len(self.unassigned_list) > 0:
+            # if assign to a existing group
             if group_index < len(self.assigned_list):
+                # if group has less than three students
                 if len(self.assigned_list[group_index]) < 3:
                     self.assigned_list[group_index].append(self.unassigned_list.pop(0))
                 else:
                     return False
+            # add a new group for new assigned student
             else:
                 self.assigned_list.append([self.unassigned_list.pop(0)])
+            # update the time for new assigned student
             self.calculate_total_time()
             return True
         else:
             return False
 
+    # print the output according to the specific format
     def print_status(self):
         for group in self.assigned_list:
             print(' '.join(student.name for student in group))
@@ -137,12 +159,15 @@ def read_file(path):
     return student_list
 
 
+# define a status is the goal or not
 def is_goal(status):
     return len(status.unassigned_list) == 0
 
 
+# find possible successors
 def find_successors(status):
     successors = []
+    # assign next student at all possible position
     for i in range(0, len(status.assigned_list) + 1):
         new_status = Status(status.assigned_list, status.unassigned_list)
         is_assigned = new_status.assign_student(i)
@@ -150,36 +175,44 @@ def find_successors(status):
     return successors
 
 
+# find next pop index in collection
 def find_next(collection):
     temp_min = 999999
     index = 0
-    for item in collection:
-        if item.least_possible_time < temp_min:
-            temp_min = item.least_possible_time
-            index = collection.index(item)
+    for i in range(0, len(collection)):
+        if collection[i].least_possible_time < temp_min:
+            temp_min = collection[i].least_possible_time
+            index = i
     return index
 
 
+# solve the problem, a*
 def solve(status):
+    start = time.time()
     # initial fringe and closed
     fringe = [status]
     possible_goal = None
     while len(fringe) > 0:
-        # print([state.least_possible_time for state in fringe])
+        # find next pop status in fringe
         index = find_next(fringe)
         next_status = fringe.pop(index)
         if is_goal(next_status):
-            return next_status
+            # if it is a goal, buffer it and wait for a better solution
             if possible_goal is None or possible_goal.total_time > next_status.total_time:
                 possible_goal = next_status
-            if len(fringe) == 0 or possible_goal.total_time <= fringe[find_next(fringe)].least_possible_time:
+            # if len(fringe) == 0 or possible_goal.total_time <= fringe[find_next(fringe)].least_possible_time:
+            #     return possible_goal
+            end = time.time()
+            # find a best solution in limited time
+            if end - start > math.sqrt(len(status.unassigned_list)) / 2:
+                # print(end - start)
                 return possible_goal
         for s in find_successors(next_status):
             fringe.append(s)
-            # fringe.sort(key=lambda student: student.least_possible_time, reverse=True)
-    return False
+    return possible_goal
 
 
+# a function to actually find the best solution
 def full_solve(status):
     # initial fringe and closed
     fringe = [status]
@@ -195,7 +228,6 @@ def full_solve(status):
     return possible_goal
 
 
-start = time.time()
 # Main
 #  get file path from argv
 file_path = sys.argv[1] if sys.argv.__len__() > 1 else None
@@ -211,5 +243,3 @@ Status.set_parameter(time_grade, time_preferred_email, time_hate_meeting)
 initial_status = Status([], full_student_list)
 solution = solve(initial_status)
 solution.print_status()
-end = time.time()
-# print(end - start)
