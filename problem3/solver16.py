@@ -111,7 +111,8 @@ class Status:
             step_string = step[0] + step[1].__str__() \
                           + (step[2][0] + 1 if step[0] == 'L' or step[0] == 'R' else step[2][1] + 1).__str__()
             steps.append(step_string)
-        print(steps)
+        # print(steps)
+        print(' '.join(step for step in steps))
 
     # print all info, for debug
     def print_all(self):
@@ -250,6 +251,7 @@ def find_next(fringe):
     index = 0
     for status in fringe:
         # '<=' time less than '<', maybe 40% less
+        # however, '<' will get a better solution!
         if status.priority < min_priority:
             min_priority = status.priority
             index = fringe.index(status)
@@ -309,7 +311,7 @@ def solve(status):
 
         # if next_status is the goal, return this status
         if is_goal(next_status.board):
-            next_status.print_all()
+            # next_status.print_all()
             return next_status
         # add next_status board to closed
         closed.append(next_status.board)
@@ -346,11 +348,13 @@ initial_board = read_file(file_path)
 # get the initial status
 initial_status = Status(initial_board, 0, [])
 
-start = time.time()
+# start = time.time()
 # to find out if the board is solvable before solving it
 if solvable(initial_board):
-    solve(initial_status)
+    end_status = solve(initial_status)
 else:
     print("No solution.")
-end = time.time()
-print(end - start)
+end_status.print_solution()
+# end = time.time()
+# print(end - start)
+# print formatted output

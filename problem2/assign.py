@@ -178,13 +178,24 @@ def find_next(collection):
 def solve(status):
     # initial fringe and closed
     fringe = [status]
+    while len(fringe) > 0:
+        for s in find_successors(fringe.pop()):
+            if is_goal(s):
+                return s
+            fringe.append(s)
+            fringe.sort(key=lambda student: student.least_possible_time, reverse=True)
+    return False
+
+
+def solve_old(status):
+    # initial fringe and closed
+    fringe = [status]
     possible_goal = None
     while len(fringe) > 0:
         # print([state.least_possible_time for state in fringe])
         index = find_next(fringe)
         next_status = fringe.pop(index)
         if is_goal(next_status):
-            return next_status
             if possible_goal is None or possible_goal.total_time > next_status.total_time:
                 possible_goal = next_status
             if len(fringe) == 0 or possible_goal.total_time <= fringe[-1].least_possible_time:
@@ -215,8 +226,8 @@ def full_solve(status):
 file_path = sys.argv[1] if sys.argv.__len__() > 1 else None
 # read time parameter from argv
 time_grade = int(sys.argv[2]) if sys.argv.__len__() > 2 else 1
-time_preferred_email = int(sys.argv[3]) if sys.argv.__len__() > 3 else 1
-time_hate_meeting = int(sys.argv[4]) if sys.argv.__len__() > 4 else 1
+time_preferred_email = int(sys.argv[4]) if sys.argv.__len__() > 4 else 1
+time_hate_meeting = int(sys.argv[3]) if sys.argv.__len__() > 3 else 1
 # read the file
 full_student_list = read_file(file_path)
 # set status time, static
