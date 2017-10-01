@@ -330,9 +330,9 @@ if solution != False:
         print("Go from {0} to {1} via {2} for {3} miles ({4} hours)".format(city1,city2,highway,distance,time))
         str = str + i + " "
         j = j + 1
-    print(length, hours, str)
+    print length, hours, str
 else:
-    print("No Solution")
+    print "No Solution"
 
 
 
