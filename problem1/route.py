@@ -5,7 +5,7 @@
 #
 
 #Note: The routes which have a speed limit of 0 are not considered. A speed limit of zero may imply it is under maintenance and
-#you cannot use that way
+#you cannot use that road segment.
 
 #(1) Which search algorithm seems to work best for each routing options?
 #For long distances, A star works better than the rest.Uniform also works better but it explores more nodes
@@ -13,8 +13,11 @@
 
 #(2) Which algorithm is fastest in terms of the amount of computation time required by your
 #program, and by how much, according to your experiments?
-#If solutions are dense DFS is best amongst all.DFS requires least time for finding goal node.For shorter routes it is comparable to A star. But for long
+#If there are multiple solutions and they are dense and we dont require optimal path, DFS is best amongst all.DFS requires least time for finding goal node.For shorter routes it is comparable to A star. But for long
 #routes DFS takes half or even less amount of time than A star.
+# Astar takes time due to the use of heuristic to reach the goal
+#For finding optimal paths A star and uniform are better
+
 
 #(3) Which algorithm requires the least memory, and by how much, according to your experiments?
 #DFS requires least memory than others.It requires linear space i.e O(bm) where b is branching factor and m is maximum depth
@@ -23,12 +26,15 @@
 #(4) Which heuristic function(s) did you use, how good is it,and how might you make it/them better?
 # f(n) = g(n) + h(s), where g(n) is the cost to reach current node and h(s) is cost to reach goal node
 # h(s) is the distance computed between current node and goal node using haversine formula
-# In many cases we dont have GPS data for nodes, in that case value of h(s) will be the heuristic value of parent of s -
-# distance travelled from this node to parent. As we moved back i.e away from goal we subtracted the distance.
-#This heuristic will never overestimate the path to goal node. We will explore nodes which have minimum f(n) value
-#This is implemented using heapq structure in python. It is min priority queue.
+# In many cases we dont have GPS data for nodes, in that case value of h(s) will be the heuristic value of parent of s minus the
+# distance travelled from this node to parent. As we moved back i.e away from goal, I have subtracted the distance.
+#This heuristic will never overestimate the path to goal node. It will explore nodes which have minimum f(n) value
+#This is implemented using heapq structure in python . It is min priority queue.
 
-#Longtour function is implemented
+#Longtour function is implemented in Astar and uniform, but it will give longest tour in A Star as it uses heuristics to reach the
+#goal and for longtour we will use same heuristic to move away from goal.
+
+
 
 import  time
 import sys
@@ -53,6 +59,7 @@ def read_road_segments():            # Reading road segments
     count = 0
     for line in file.readlines():
         city_data = line.split(" ")
+        # Ignoring the entires which dont have distance or speed data
         if city_data[2] == "0" or city_data[2] == "" or city_data[3] == "" or city_data[3] == "0":
             continue
         sum += int(city_data[3])
@@ -115,12 +122,11 @@ def backtrace(parent, start, end,road_segment,cost):
     path.reverse()
     if cost_function == "segments":
         print  "No of segments:" + str(cost)
-        # total_distance = cost
     return [total_distance,total_time,path]
 
 def solve_dfs_bfs(start_city, end_city,routing_algorithm, cost_function,road_segment):  # dfs/bfs
     fringe = [[start_city,'root',0]]
-    parent = {}
+    parent = {}         #used to backtrack from goal node to start node
     visited_cities = []
 
 
@@ -214,6 +220,7 @@ def successors_cities_astar(city,routing_algo, parameter,road_segments,parent,he
             else:
                 heuristic[neighbour_city] = distance_lat_lon(neighbour_city_gps[0], neighbour_city_gps[1],goal_lat_lon[0], goal_lat_lon[1])
                 distance_goal = float(heuristic[neighbour_city]) + float(city[3])
+            # longtour implemented by multiplying the distance by -1, turning min priority queue to max prirority queue
             result.append([(-1) * (float(distance_goal)), neighbour_city, city[1],
                            float(city[3]) + float(road_segments[city[1]][neighbour_city][0])])
 
