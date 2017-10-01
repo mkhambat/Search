@@ -144,6 +144,7 @@ def find_coordinate(tile, board):
 
 
 # detect if a board is solvable before solving it
+# basic algorithm from http://www.geeksforgeeks.org/check-instance-15-puzzle-solvable/
 def solvable(board):
     is_odd = False if len(board) % 2 == 0 else True
     flat_board = []
@@ -241,6 +242,9 @@ def is_goal(board):
 def is_same(board1, board2):
     if len(board1) != len(board2):
         return False
+    for i in range(0, len(board1)):
+        if board1[i] != board2[i]:
+            return False
     return False if any(board1[r][c] != board2[r][c] for r in range(len(board1)) for c in range(len(board1[r]))) \
         else True
 
@@ -348,13 +352,13 @@ initial_board = read_file(file_path)
 # get the initial status
 initial_status = Status(initial_board, 0, [])
 
-# start = time.time()
+start = time.time()
 # to find out if the board is solvable before solving it
 if solvable(initial_board):
     end_status = solve(initial_status)
 else:
     print("No solution.")
 end_status.print_solution()
-# end = time.time()
+end = time.time()
 # print(end - start)
 # print formatted output
