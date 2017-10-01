@@ -18,7 +18,7 @@ class Student:
 
     def __init__(self, name, size, p_list, h_list):
         self.name = name
-        self.preferred_group_size = size
+        self.preferred_group_size = int(size)
         self.preferred_student_list = list(p_list)
         self.hate_student_list = list(h_list)
 
@@ -85,9 +85,13 @@ class Status:
             for student in group:
                 if student.preferred_group_size != 0 and student.preferred_group_size != len(group):
                     self.total_time += Status.time_size_email
+                    self.least_possible_time += Status.time_size_email \
+                        if len(group) > student.preferred_group_size else 0
                 for preferred_student in student.preferred_student_list:
                     if preferred_student not in list(student.name for student in group):
                         self.total_time += self.time_no_preferred_email
+                        self.least_possible_time += self.time_no_preferred_email \
+                            if preferred_student not in list(student.name for student in self.unassigned_list) else 0
                 for hate_student in student.hate_student_list:
                     if hate_student in list(student.name for student in group):
                         self.total_time += self.time_hate_meeting
@@ -121,7 +125,7 @@ def read_file(path):
         if len(line) > 0:
             line_split = line.split()
             name = line_split[0]
-            preferred_size = line_split[1]
+            preferred_size = int(line_split[1])
             preferred_list = line_split[2].split(',') if line_split[2] != '_' else []
             hate_list = line_split[3].split(',') if line_split[2] != '_' else []
             student_list.append(Student(name, preferred_size, preferred_list, hate_list))
@@ -157,6 +161,7 @@ def solve(status):
             fringe.append(s)
             fringe.sort(key=lambda student: student.least_possible_time, reverse=True)
     return possible_goal
+
 
 def full_solve(status):
     # initial fringe and closed
