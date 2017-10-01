@@ -167,7 +167,7 @@ def successors_cities_astar(city,routing_algo, parameter,road_segments,parent,he
     distance_goal = 0
     for neighbour_city in road_segments[city[1]]['connected']:
         if parameter == "segments":
-            result.append([int(city[0]) + 1,neighbour_city, city[1]])
+            result.append([int(city[0]) + 1,neighbour_city, city[1],int(city[0]) + 1])
 
         elif parameter == "time":
             neighbour_city_gps = find_lat_lon(neighbour_city)
@@ -177,7 +177,7 @@ def successors_cities_astar(city,routing_algo, parameter,road_segments,parent,he
             else:
                 heuristic[neighbour_city] = distance_lat_lon(neighbour_city_gps[0],neighbour_city_gps[1],goal_lat_lon[0],goal_lat_lon[1])
                 distance_goal =  float(heuristic[neighbour_city]) + float(city[3])
-            result.append([float(distance_goal), neighbour_city, city[1],int(city[3]) + int(road_segments[city[1]][neighbour_city][0])])
+            result.append([float(distance_goal), neighbour_city, city[1],int(city[3]) + int(road_segments[city[1]][neighbour_city][0]),0])
         elif parameter == "distance": #distance
             neighbour_city_gps = find_lat_lon(neighbour_city)
             if neighbour_city_gps == [0,0]:
@@ -220,7 +220,6 @@ def solve_astar(start_city, end_city,routing_algorithm, cost_function,road_segme
         if current_city[1] == end_city:
             parent[current_city[1]] = current_city[2]
             return backtrace(parent, start_city, end_city, road_segment, float(current_city[3]))
-
         for i in temp: #to allow a visited city to revisit if it came by a smaller cost
             if(i[0] == current_city[1] and float(current_city[3]) < float(i[1])):
                 if i[0] not  in visited_cities:
@@ -271,7 +270,6 @@ cost_function = sys.argv[4]
 city_gps = read_city_gps()
 avg_speed = 0
 avg_speed,road_segments_result = read_road_segments()
-print  avg_speed
 goal_lat_lon =  find_lat_lon(end_city) #find goal city lat and long
 
 if routing_algorithm == "bfs" or routing_algorithm == "dfs":
@@ -292,7 +290,12 @@ if solution != False:
         if i == end_city:
             str = str + i
             break
-        print("Go from {0} to {1} via {2} for {3} miles".format(i, result[j+1],road_segments_result[i][result[j+1]][2],road_segments_result[i][result[j+1]][0]))
+        city1 = i
+        city2 =result[j+1]
+        distance = road_segments_result[i][result[j+1]][0]
+        highway = road_segments_result[i][result[j+1]][2]
+        hours = round(float(road_segments_result[i][result[j+1]][0])/float(road_segments_result[i][result[j+1]][1]),2)
+        print("Go from {0} to {1} via {2} for {3} miles ({4} hours)".format(city1,city2,highway,distance,hours))
         str = str + i + " "
         j = j + 1
     print(length, hours, str)
