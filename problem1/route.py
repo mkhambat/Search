@@ -13,9 +13,9 @@
 
 #(2) Which algorithm is fastest in terms of the amount of computation time required by your
 #program, and by how much, according to your experiments?
-#If there are multiple solutions and they are dense and we dont require optimal path, DFS is best amongst all.DFS requires least time for finding goal node.For shorter routes it is comparable to A star. But for long
-#routes DFS takes half or even less amount of time than A star.
-# Astar takes time due to the use of heuristic to reach the goal
+#If there are multiple solutions and they are dense and we dont require optimal path, DFS is best amongst all.DFS requires least
+# time for finding goal node.For shorter routes it is comparable to A star. But for long routes DFS takes half or even less
+# amount of time than A star. Astar takes time due to the use of heuristic to reach the goal
 #For finding optimal paths A star and uniform are better
 
 
@@ -26,9 +26,10 @@
 #(4) Which heuristic function(s) did you use, how good is it,and how might you make it/them better?
 # f(n) = g(n) + h(s), where g(n) is the cost to reach current node and h(s) is cost to reach goal node
 # h(s) is the distance computed between current node and goal node using haversine formula
-# In many cases we dont have GPS data for nodes, in that case value of h(s) will be the heuristic value of parent of s minus the
-# distance travelled from this node to parent. As we moved back i.e away from goal, I have subtracted the distance.
-#This heuristic will never overestimate the path to goal node. It will explore nodes which have minimum f(n) value
+# In many cases we dont have GPS data for nodes, in that case value of h(s) will be the heuristic value of parent of s minus
+# the distance travelled from this node to parent. As we moved back i.e away from goal, I have subtracted the distance.
+#This heuristic will never overestimate the path to goal node. It is admissible.It will explore nodes which have
+# minimum f(n) value
 #This is implemented using heapq structure in python . It is min priority queue.
 
 #Longtour function is implemented in Astar and uniform, but it will give longest tour in A Star as it uses heuristics to reach the
@@ -190,7 +191,7 @@ def solve_uniform(start_city, end_city,routing_algorithm, cost_function,road_seg
     return False
 
 
-def successors_cities_astar(city,routing_algo, parameter,road_segments,parent,heuristic): #succ function for uniform cost
+def successors_cities_astar(city,routing_algo, parameter,road_segments,parent,heuristic): #succ function for astar
     #city is parent city whose successors are to be found
     result = []
     distance_successor = 0
@@ -228,7 +229,8 @@ def successors_cities_astar(city,routing_algo, parameter,road_segments,parent,he
 
 
 #Astar Heuristic:distance between startnode and successor and successor to goal node
-#if we dont have gps data about any city/junction we use the parent city's gps and subtract the distance travelled to reach parent
+#if we dont have gps data about any city/junction we use the parent city's gps and subtract the distance travelled
+#  to reach parent
 def solve_astar(start_city, end_city,routing_algorithm, cost_function,road_segment):
     parent = {}
     heuristic = {}
