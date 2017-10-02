@@ -182,12 +182,17 @@ def calculate_manhattan_distance(coordinate1, coordinate2):
 # by manhattan distance
 def compare_board_manhattan(board1, board2):
     sum_manhattan = 0
+    upper_limit = len(board2)
     for row in board1:
         for col in row:
-            if int(col) != 0:
+            col_int = int(col)
+            if col_int != 0:
                 # find coordinates
-                coordinate1 = find_coordinate(col, board1)
-                coordinate2 = find_coordinate(col, board2)
+                coordinate1 = [board1.index(row), row.index(col)]
+                # if end board is fixed, coordinate 2 can be calculated directly
+                # coordinate2 = find_coordinate(col, board2)
+                coordinate2 = [(col_int - 1) // upper_limit, (col_int - 1) % upper_limit]
+
                 sum_manhattan += calculate_manhattan_distance(coordinate1, coordinate2)
     return sum_manhattan
 
@@ -213,11 +218,14 @@ def compare_board_linear_conflict_horizontal(board1, board2):
     for i in range(0, len(board1)):
         # for each tile
         for j in range(0, len(board1[i])):
-            if int(board1[i][j]) != 0:
+            if board1[i][j] != '0':
                 # for each tile behind
                 for k in range(j + 1, len(board1[i])):
                     # if two tiles are "in same row and should be in same row, and in wrong position", linear conflict
-                    if board1[i][j] in board2[i] \
+                    # if board1[i][j] in board2[i] \
+                    #         and board1[i][k] in board2[i] \
+                    if board1[i][k] != '0' \
+                            and board1[i][j] in board2[i] \
                             and board1[i][k] in board2[i] \
                             and board2[i].index(board1[i][j]) > board2[i].index(board1[i][k]):
                         sum_conflict += 1
@@ -318,12 +326,12 @@ def solve(status):
             # next_status.print_all()
             return next_status
         # add next_status board to closed
-        closed.append(next_status.board)
+        closed.append(next_status)
         for s in find_successors(next_status):
             # to find if a successor in closed
             is_in_closed = False
             for c in closed:
-                if is_same(s.board, c):
+                if c.manhattan == s.manhattan and is_same(s.board, c.board):
                     is_in_closed = True
                     break
 
@@ -331,7 +339,7 @@ def solve(status):
             # if not in closed, find if a successor in fringe
             if not is_in_closed:
                 for open_status in fringe:
-                    if is_same(s.board, open_status.board):
+                    if open_status.manhattan == s.manhattan and is_same(s.board, open_status.board):
                         is_in_fringe = True
                         # if in fringe, update the priority to a smaller one
                         if s.priority < open_status.priority:
@@ -356,9 +364,9 @@ start = time.time()
 # to find out if the board is solvable before solving it
 if solvable(initial_board):
     end_status = solve(initial_status)
+    end_status.print_solution()
 else:
     print("No solution.")
-end_status.print_solution()
 end = time.time()
 # print(end - start)
 # print formatted output
