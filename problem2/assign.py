@@ -23,7 +23,7 @@ class Student:
         self.preferred_student_list = list(p_list)
         self.hate_student_list = list(h_list)
 
-    # override functions for printing
+    # override functions for printing & debugging
     def __repr__(self):
         return self.name
 
@@ -80,13 +80,10 @@ class Status:
 
     # calculate total time and least possible time
     def calculate_total_time(self):
-        # assigned_count is the count of assigned student
-        assigned_count = 0
         # assigned group x time per group
         self.total_time = len(self.assigned_list) * Status.time_grade_group
         for group in self.assigned_list:
             for student in group:
-                assigned_count += 1
 
                 # if size is not same with preferred size, + 1
                 if student.preferred_group_size != 0 and student.preferred_group_size != len(group):
